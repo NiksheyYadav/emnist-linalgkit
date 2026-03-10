@@ -149,7 +149,8 @@ Training a 3-layer MLP on MNIST (60K samples, 10 epochs):
 ## 🌐 Static Deployment (Vercel/GitHub Pages)
 
 A minimal static site entrypoint is included at `site/index.html`.
-If deploying on Vercel as a static project, set the **Root Directory** to `site/`.
+A `vercel.json` in the repository root sets `outputDirectory` to `site`,
+so no custom **Root Directory** is needed in Vercel project settings.
 
 ## 📝 License
 
