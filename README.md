@@ -13,7 +13,7 @@ An educational deep learning project that teaches you how neural networks work b
 | **Package Size** | ~1 MB | 700+ MB |
 | **Installation** | `pip install LinAlgKit` | Complex CUDA setup |
 | **Learning Curve** | See every computation | Black-box autograd |
-| **Dependencies** | NumPy only | Massive dependency tree |
+| **Dependencies** | NumPy + LinAlgKit (optional: matplotlib/requests) | Massive dependency tree |
 | **Educational Value** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
 | **GPU Support** | ❌ (CPU + Numba JIT) | ✅ |
 | **Production Ready** | ❌ | ✅ |
@@ -50,10 +50,14 @@ An educational deep learning project that teaches you how neural networks work b
 pip install -r requirements.txt
 ```
 
+Dependencies in `requirements.txt`:
+- **Required:** `numpy`, `LinAlgKit`
+- **Optional but included by default:** `matplotlib` (plots), `requests` (dataset downloads when available)
+
 ## 🚀 Quick Start
 
 ```python
-from nn import Sequential, Dense, ReLU, Softmax, CrossEntropyLoss, Adam
+from nn import Sequential, Dense, ReLU, Softmax
 
 # Build a simple neural network
 model = Sequential([
@@ -61,7 +65,9 @@ model = Sequential([
     Dense(128, 64), ReLU(),
     Dense(64, 10), Softmax()
 ])
+```
 
+```bash
 # Train on MNIST
 python train.py --epochs 10
 
@@ -139,6 +145,11 @@ Training a 3-layer MLP on MNIST (60K samples, 10 epochs):
 | Install Size | 1 MB | 700 MB | 2 GB |
 
 *LinAlgKit trades speed for simplicity and educational value*
+
+## 🌐 Static Deployment (Vercel/GitHub Pages)
+
+A minimal static site entrypoint is included at `site/index.html`.
+If deploying on Vercel as a static project, set the **Root Directory** to `site/`.
 
 ## 📝 License
 

@@ -1,60 +1,85 @@
-"""Quick test of the neural network framework."""
+"""Pytest-based tests for the neural network framework."""
 import numpy as np
-import sys
-sys.stdout.reconfigure(encoding='utf-8')
 
 from nn import Sequential, Dense, ReLU, Softmax
-from nn import CrossEntropyLoss, Adam
+from nn import CrossEntropyLoss, BinaryCrossEntropyLoss, Adam
 
-print("=" * 50)
-print("Testing Neural Network Framework")
-print("=" * 50)
 
-# Test 1: Create model
-print("\n1. Creating model...")
-model = Sequential([
-    Dense(784, 128),
-    ReLU(),
-    Dense(128, 10),
-    Softmax()
-])
-print("   Model created successfully!")
+def _build_model():
+    return Sequential([
+        Dense(784, 128),
+        ReLU(),
+        Dense(128, 10),
+        Softmax(),
+    ])
 
-# Test 2: Forward pass
-print("\n2. Testing forward pass...")
-x = np.random.randn(32, 784)  # 32 samples, 784 features
-output = model.forward(x)
-print(f"   Input shape: {x.shape}")
-print(f"   Output shape: {output.shape}")
-print(f"   Output sums to 1: {np.allclose(output.sum(axis=1), 1.0)}")
 
-# Test 3: Loss computation
-print("\n3. Testing loss computation...")
-y = np.eye(10)[np.random.randint(0, 10, 32)]  # Random one-hot labels
-loss_fn = CrossEntropyLoss()
-loss = loss_fn.forward(output, y)
-print(f"   Loss value: {loss:.4f}")
+def test_forward_output_shape_and_probability_normalization():
+    np.random.seed(0)
+    model = _build_model()
 
-# Test 4: Backward pass
-print("\n4. Testing backward pass...")
-grad = loss_fn.backward()
-model.backward(grad)
-print(f"   Gradients computed successfully!")
+    x = np.random.randn(32, 784)
+    output = model.forward(x)
 
-# Test 5: Optimizer step
-print("\n5. Testing optimizer...")
-optimizer = Adam(lr=0.001)
-optimizer.step(model.layers)
-print("   Weights updated successfully!")
+    assert output.shape == (32, 10)
+    assert np.allclose(output.sum(axis=1), 1.0, atol=1e-6)
 
-# Test 6: Training step
-print("\n6. Testing train_step...")
-loss1 = model.train_step(x, y, loss_fn, optimizer)
-loss2 = model.train_step(x, y, loss_fn, optimizer)
-print(f"   Loss step 1: {loss1:.4f}")
-print(f"   Loss step 2: {loss2:.4f}")
-print(f"   Loss decreased: {loss2 < loss1}")
 
-print("\n" + "=" * 50)
-print("All tests passed!")
-print("=" * 50)
+def test_backward_computes_gradients_and_optimizer_updates_weights():
+    np.random.seed(1)
+    model = _build_model()
+    x = np.random.randn(16, 784)
+    y = np.eye(10)[np.random.randint(0, 10, 16)]
+
+    loss_fn = CrossEntropyLoss()
+    optimizer = Adam(lr=0.001)
+
+    predictions = model.forward(x)
+    loss = loss_fn.forward(predictions, y)
+    grad = loss_fn.backward()
+    model.backward(grad)
+
+    dense_layers = [layer for layer in model.layers if hasattr(layer, "W")]
+    assert dense_layers, "Expected model to include Dense layers"
+    for layer in dense_layers:
+        assert layer.grad_W is not None
+        assert layer.grad_b is not None
+        assert layer.grad_W.shape == layer.W.shape
+        assert layer.grad_b.shape == layer.b.shape
+
+    weights_before = model.get_weights()
+    optimizer.step(model.layers)
+    weights_after = model.get_weights()
+
+    assert np.isfinite(loss)
+    assert any(not np.allclose(w1, w2) for w1, w2 in zip(weights_before, weights_after))
+
+
+def test_train_step_returns_finite_loss():
+    np.random.seed(2)
+    model = _build_model()
+    x = np.random.randn(32, 784)
+    y = np.eye(10)[np.random.randint(0, 10, 32)]
+
+    loss_fn = CrossEntropyLoss()
+    optimizer = Adam(lr=0.001)
+
+    loss = model.train_step(x, y, loss_fn, optimizer)
+    assert np.isfinite(loss)
+
+
+def test_binary_cross_entropy_backward_consistent_for_vector_and_column_labels():
+    predictions_vector = np.array([0.9, 0.2, 0.6, 0.1], dtype=np.float64)
+    targets_vector = np.array([1.0, 0.0, 1.0, 0.0], dtype=np.float64)
+
+    loss_vec = BinaryCrossEntropyLoss()
+    loss_vec.forward(predictions_vector, targets_vector)
+    grad_vec = loss_vec.backward()
+
+    predictions_column = predictions_vector.reshape(-1, 1)
+    targets_column = targets_vector.reshape(-1, 1)
+    loss_col = BinaryCrossEntropyLoss()
+    loss_col.forward(predictions_column, targets_column)
+    grad_col = loss_col.backward().reshape(-1)
+
+    assert np.allclose(grad_vec, grad_col)
