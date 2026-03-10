@@ -9,14 +9,14 @@ the math behind deep learning.
 
 from .layers import Dense, Dropout
 from .activations import ReLU, Sigmoid, Softmax, Tanh
-from .losses import CrossEntropyLoss, MSELoss
+from .losses import CrossEntropyLoss, MSELoss, BinaryCrossEntropyLoss, HuberLoss
 from .optimizers import SGD, Adam
 from .model import Sequential
 
 __all__ = [
     'Dense', 'Dropout',
     'ReLU', 'Sigmoid', 'Softmax', 'Tanh',
-    'CrossEntropyLoss', 'MSELoss',
+    'CrossEntropyLoss', 'MSELoss', 'BinaryCrossEntropyLoss', 'HuberLoss',
     'SGD', 'Adam',
     'Sequential'
 ]

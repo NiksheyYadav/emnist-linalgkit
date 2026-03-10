@@ -237,7 +237,12 @@ class BinaryCrossEntropyLoss(Loss):
         When combined with sigmoid:
             dL/d(logits) = predictions - targets
         """
-        batch_size = self.predictions.shape[0] if self.predictions.ndim > 1 else 1
+        # Keep gradient scaling consistent for (N,) and (N, 1) batch formats.
+        # Only true scalar predictions should use batch_size=1.
+        if np.isscalar(self.predictions) or self.predictions.ndim == 0:
+            batch_size = 1
+        else:
+            batch_size = self.predictions.shape[0]
         return (self.predictions - self.targets) / batch_size
 
 
